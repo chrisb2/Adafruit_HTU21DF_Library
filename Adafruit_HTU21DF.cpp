@@ -22,17 +22,15 @@
 Adafruit_HTU21DF::Adafruit_HTU21DF() {
 }
 
-
 boolean Adafruit_HTU21DF::begin(void) {
-  Wire.begin();
-  
-  reset();
+  begin(RH12_T14);
+}
 
-  Wire.beginTransmission(HTU21DF_I2CADDR);
-  Wire.write(HTU21DF_READREG);
-  Wire.endTransmission();
-  Wire.requestFrom(HTU21DF_I2CADDR, 1);
-  return (Wire.read() == 0x2); // after reset should be 0x2
+boolean Adafruit_HTU21DF::begin(byte resBits) {
+  Wire.begin();
+  reset();
+  setResolution(resBits);
+  return (read_user_register() == resBits);
 }
 
 void Adafruit_HTU21DF::reset(void) {
@@ -41,7 +39,6 @@ void Adafruit_HTU21DF::reset(void) {
   Wire.endTransmission();
   delay(15);
 }
-
 
 float Adafruit_HTU21DF::readTemperature(void) {
   
@@ -68,7 +65,6 @@ float Adafruit_HTU21DF::readTemperature(void) {
 
   return temp;
 }
-  
 
 float Adafruit_HTU21DF::readHumidity(void) {
   // OK lets ready!
@@ -95,6 +91,45 @@ float Adafruit_HTU21DF::readHumidity(void) {
   return hum;
 }
 
+//Set sensor resolution
+/*******************************************************************************************/
+//Sets the sensor resolution to one of four levels
+//Page 12:
+// 0/0 = 12bit RH, 14bit Temp
+// 0/1 = 8bit RH, 12bit Temp
+// 1/0 = 10bit RH, 13bit Temp
+// 1/1 = 11bit RH, 11bit Temp
+//Power on default is 0/0
+void Adafruit_HTU21DF::setResolution(byte resolution)
+{
+  byte userRegister = read_user_register(); //Go get the current register state
+  userRegister &= B01111110; //Turn off the resolution bits
+  resolution &= B10000001; //Turn off all other bits but resolution bits
+  userRegister |= resolution; //Mask in the requested resolution bits
+  
+  //Request a write to user register
+  Wire.beginTransmission(HTU21DF_I2CADDR);
+  Wire.write(HTU21DF_READREG); //Write to the user register
+  Wire.write(userRegister); //Write the new resolution bits
+  Wire.endTransmission();
+}
 
+//Read the user register
+byte Adafruit_HTU21DF::read_user_register(void)
+{
+  byte userRegister;
+  
+  //Request the user register
+  Wire.beginTransmission(HTU21DF_I2CADDR);
+  Wire.write(HTU21DF_READREG); //Read the user register
+  Wire.endTransmission();
+  
+  //Read result
+  Wire.requestFrom(HTU21DF_I2CADDR, 1);
+  
+  userRegister = Wire.read();
+
+  return(userRegister);  
+}
 
 /*********************************************************************/

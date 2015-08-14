@@ -28,17 +28,24 @@
 #define HTU21DF_READREG       0xE7
 #define HTU21DF_RESET       0xFE
 
+#define RH8_T12 0b00000001
+#define RH10_T13 0b10000000
+#define RH11_T11 0b10000001
+#define RH12_T14 0b00000000
 
 
 class Adafruit_HTU21DF {
  public:
   Adafruit_HTU21DF();
   boolean begin(void);
+  boolean begin(byte resBits);
   float readTemperature(void);
   float readHumidity(void);
+  void setResolution(byte resBits);
   void reset(void);
  private:
   boolean readData(void);
+  byte read_user_register(void);
   float humidity, temp;
 };
 
